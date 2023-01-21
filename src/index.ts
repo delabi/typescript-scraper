@@ -9,6 +9,9 @@ import { Request, Response } from "express";
 import { AppDataSource } from "./data-source";
 import { Routes } from "./routes";
 import { Sugar } from "./entity/Sugar";
+import cors from "cors";
+
+const PORT = process.env.PORT || 3000;
 
 const urls = [
   {
@@ -28,17 +31,6 @@ const urls = [
 const AxiosInstance = axios.create();
 const sugarListing: sugarData[] = [];
 
-const csvWriterSugar = createObjectCsvWriter({
-  path: "./outputSugar.csv",
-  header: [
-    { id: "name", title: "Name" },
-    { id: "size", title: "Size" },
-    { id: "price", title: "Price" },
-    { id: "country", title: "Country" },
-    { id: "date", title: "Date" },
-  ],
-});
-
 interface sugarData {
   name: string;
   size: string;
@@ -47,13 +39,17 @@ interface sugarData {
   date: string;
 }
 
-
-
 AppDataSource.initialize()
   .then(async () => {
+
     // create express app
     const app = express();
     app.use(bodyParser.json());
+    app.use(cors())
+    app.get("/users", (req, res) => {
+      res.set("Access-Control-Allow-Origin", "*");
+      res.send({ msg: "This has CORS enabled 🎈" });
+    });
 
     // register express routes from defined application routes
     Routes.forEach(
@@ -86,14 +82,14 @@ AppDataSource.initialize()
     );
 
     // setup express app here
-    // ...
+
     {
       urls.map(({ url, country }) => {
         AxiosInstance.get(url)
           .then((response) => {
             const html = response.data;
             const $ = cheerio.load(html);
-    
+
             const sugarName = $(".info")
               .map(async (_, product) => {
                 const $product = $(product);
@@ -115,15 +111,13 @@ AppDataSource.initialize()
                   size = "50kg";
                 }
                 const price: string = $product.find(".prc").text();
-    
-                const date: string = Date();
-    
-                sugarListing.push({ name, size, price, country, date });
 
-                
+                const date: string = Date();
+
+                sugarListing.push({ name, size, price, country, date });
               })
               .toArray();
-    
+
             const filteredList = sugarListing.filter((obj) => {
               return (
                 !obj.name.toLowerCase().includes("bundle") &&
@@ -132,39 +126,32 @@ AppDataSource.initialize()
             });
 
             filteredList.map(async (obj) => {
-              const{name, size, price, country, date} = obj;
+              const { name, size, price, country, date } = obj;
 
-              console.log("Filtered: "+name, size, price, country, date);
-
-              await AppDataSource.manager.save(
-                AppDataSource.manager.create(Sugar, {
-                  name: name,
-                  size: size,
-                  price: price,
-                  country: country,
-                  date: date,
-                })
-              ).catch(err => {
-                console.error();
-              });
-
-
-            })
-    
-            console.log("Start Filtered List of Type:" + typeof filteredList);
-            console.log(filteredList);
-            console.log("End Filtered List");
-    
+              await AppDataSource.manager
+                .save(
+                  AppDataSource.manager.create(Sugar, {
+                    name: name,
+                    size: size,
+                    price: price,
+                    country: country,
+                    date: date,
+                  })
+                )
+                .catch((err) => {
+                  console.error();
+                });
+            });
           })
           .catch(console.error);
       });
     }
 
     // start express server
-    app.listen(3000);
-
-    console.log(
-      "Express server has started on port 3000. Open http://localhost:3000/sugars to see results"
-    );
+    app.listen(PORT, () => {
+      console.log(
+        `server started on port ${PORT} Open http://localhost:3000/sugars to see results`
+      );
+    });
   })
   .catch((error) => console.log(error));
