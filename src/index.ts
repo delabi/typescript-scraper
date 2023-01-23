@@ -146,7 +146,7 @@ AppDataSource.initialize()
       }
     }
 
-    const duration = 1000*60*60*6
+    const duration = 21_600_000;
 
     setInterval(intervalFunc, duration); // 6 hours interval
 
