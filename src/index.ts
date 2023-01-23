@@ -80,7 +80,6 @@ AppDataSource.initialize()
     );
 
     // setup express app here
-
     function intervalFunc() {
       {
         urls.map(({ url, country }) => {
@@ -147,7 +146,9 @@ AppDataSource.initialize()
       }
     }
 
-    setInterval(intervalFunc, 1000 * 60 * 60 * 6); // 6 hours interval
+    const duration = 1000*60*60*6
+
+    setInterval(intervalFunc, duration); // 6 hours interval
 
     // start express server
     app.listen(PORT, () => {

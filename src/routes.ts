@@ -21,4 +21,9 @@ export const Routes = [
     route: "/sugars/:id",
     controller: SugarController,
     action: "remove"
+},{
+    method: "get",
+    route: "/sugarsKE",
+    controller: SugarControllerKE,
+    action: "all"
 }]
