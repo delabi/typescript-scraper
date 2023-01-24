@@ -1,4 +1,4 @@
-import { AppDataSource } from '../data-source'
+import { AppDataSource } from '../configs/data-source'
 
 import { NextFunction, Request, Response } from "express"
 
