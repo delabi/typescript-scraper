@@ -1,4 +1,4 @@
-import { SugarController } from "./controller/SugarController"
+import { SugarController } from "../controllers/SugarController"
 
 export const Routes = [
 {

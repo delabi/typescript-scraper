@@ -6,7 +6,7 @@ import express from "express";
 import * as bodyParser from "body-parser";
 import { Request, Response } from "express";
 import { AppDataSource } from "./data-source";
-import { Routes } from "./routes";
+import { Routes } from "./routes/routes";
 import { Sugar } from "./entity/Sugar";
 import cors from "cors";
 
