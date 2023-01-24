@@ -74,80 +74,84 @@ AppDataSource.initialize()
       }
     );
 
-    
+    var cron = require("node-cron");
+    var task = cron.schedule(
+      "05 2,8,14,20 * * *",
+      () => {
+        console.log("cron started");
+        pushToDB();
+      },
+      {
+        scheduled: true,
+      }
+    );
 
+    task.start();
 
     // setup express app here
     function pushToDB() {
-      {
-        urls.map(({ url, country }) => {
-          AxiosInstance.get(url)
-            .then((response) => {
-              const html = response.data;
-              console.log(html);
-              const $ = cheerio.load(html);
+      //scrapes the data from the urls
+      urls.map(({ url, country }) => {
+        AxiosInstance.get(url)
+          .then((response) => {
+            const html = response.data;
+            const $ = cheerio.load(html);
 
-              const sugarName = $(".info")
-                .map(async (_, product) => {
-                  const $product = $(product);
-                  const title: string = $product.find(".name").text();
-                  const nameArray = title.split(" -");
-                  const name = nameArray[0];
-                  let size = "";
-                  if (title.toLowerCase().includes("1kg")) {
-                    size = "1kg";
-                  } else if (title.toLowerCase().includes("2kg")) {
-                    size = "2kg";
-                  } else if (title.toLowerCase().includes("5kg")) {
-                    size = "5kg";
-                  } else if (title.toLowerCase().includes("10kg")) {
-                    size = "10kg";
-                  } else if (title.toLowerCase().includes("25kg")) {
-                    size = "25kg";
-                  } else if (title.toLowerCase().includes("50kg")) {
-                    size = "50kg";
-                  }
-                  const price: string = $product.find(".prc").text();
+            $(".info").map(async (_, product) => {
+              const $product = $(product);
+              const title: string = $product.find(".name").text();
+              const titleArray = title.split(" -");
+              const name = titleArray[0];
+              let size = "";
+              if (title.toLowerCase().includes("1kg")) {
+                size = "1kg";
+              } else if (title.toLowerCase().includes("2kg")) {
+                size = "2kg";
+              } else if (title.toLowerCase().includes("5kg")) {
+                size = "5kg";
+              } else if (title.toLowerCase().includes("10kg")) {
+                size = "10kg";
+              } else if (title.toLowerCase().includes("25kg")) {
+                size = "25kg";
+              } else if (title.toLowerCase().includes("50kg")) {
+                size = "50kg";
+              }
+              const price: string = $product.find(".prc").text();
 
-                  const date: string = Date();
+              const date: string = Date();
 
-                  sugarListing.push({ name, size, price, country, date });
-                  console.log("Added Successfully");
-                })
-                .toArray();
+              sugarListing.push({ name, size, price, country, date });
+            });
 
-              const filteredList = sugarListing.filter((obj) => {
-                return (
-                  !obj.name.toLowerCase().includes("bundle") &&
-                  obj.size.toLowerCase().includes("kg")
-                );
-              });
+            const filteredList = sugarListing.filter((obj) => {
+              return (
+                !obj.name.toLowerCase().includes("bundle") &&
+                obj.size.toLowerCase().includes("kg")
+              );
+            });
 
-              filteredList.map(async (obj) => {
-                const { name, size, price, country, date } = obj;
+            filteredList.map(async (obj) => {
+              const { name, size, price, country, date } = obj;
 
-                await AppDataSource.manager
-                  .save(
-                    AppDataSource.manager.create(Sugar, {
-                      name: name,
-                      size: size,
-                      price: price,
-                      country: country,
-                      date: date,
-                    })
-                  )
-                  .catch((err) => {
-                    console.error();
-                  });
-              });
-            })
-            .catch(console.error);
-        });
-      }
+              await AppDataSource.manager
+                .save(
+                  AppDataSource.manager.create(Sugar, {
+                    name: name,
+                    size: size,
+                    price: price,
+                    country: country,
+                    date: date,
+                  })
+                )
+                .catch((err) => {
+                  console.error(err);
+                });
+              console.log("saved at: " + date);
+            });
+          }).then()
+          .catch(console.error);
+      });
     }
-
-    var cron = require("node-cron");
-    cron.schedule("8,13,19 * * *", pushToDB);
 
     // start express server
     app.listen(PORT, () => {
