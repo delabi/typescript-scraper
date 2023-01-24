@@ -11,7 +11,6 @@ import { Sugar } from "./entity/Sugar";
 import cors from "cors";
 
 const PORT = process.env.PORT || 3000;
-
 const urls = [
   {
     url: "https://www.jumia.co.ke/single-pack-sugar/",
@@ -44,10 +43,6 @@ AppDataSource.initialize()
     const app = express();
     app.use(bodyParser.json());
     app.use(cors());
-    app.get("/users", (req, res) => {
-      res.set("Access-Control-Allow-Origin", "*");
-      res.send({ msg: "This has CORS enabled 🎈" });
-    });
 
     // register express routes from defined application routes
     Routes.forEach(
@@ -79,13 +74,17 @@ AppDataSource.initialize()
       }
     );
 
+    
+
+
     // setup express app here
-    function intervalFunc() {
+    function pushToDB() {
       {
         urls.map(({ url, country }) => {
           AxiosInstance.get(url)
             .then((response) => {
               const html = response.data;
+              console.log(html);
               const $ = cheerio.load(html);
 
               const sugarName = $(".info")
@@ -113,6 +112,7 @@ AppDataSource.initialize()
                   const date: string = Date();
 
                   sugarListing.push({ name, size, price, country, date });
+                  console.log("Added Successfully");
                 })
                 .toArray();
 
@@ -146,9 +146,8 @@ AppDataSource.initialize()
       }
     }
 
-    const duration = 21_600_000;
-
-    setInterval(intervalFunc, duration); // 6 hours interval
+    var cron = require("node-cron");
+    cron.schedule("8,13,19 * * *", pushToDB);
 
     // start express server
     app.listen(PORT, () => {
