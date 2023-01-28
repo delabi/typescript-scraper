@@ -37,6 +37,15 @@ interface sugarData {
   date: string;
 }
 
+function sizing(title: string) {
+  if (title.toLowerCase().includes("1kg")) return "1 kg";
+  if (title.toLowerCase().includes("1kg")) return "2 kg";
+  if (title.toLowerCase().includes("1kg")) return "5 kg";
+  if (title.toLowerCase().includes("1kg")) return "10 kg";
+  if (title.toLowerCase().includes("1kg")) return "25 kg";
+  if (title.toLowerCase().includes("1kg")) return "50 kg";
+}
+
 AppDataSource.initialize()
   .then(async () => {
     // create express app
@@ -76,7 +85,7 @@ AppDataSource.initialize()
 
     var cron = require("node-cron");
     var task = cron.schedule(
-      "05 2,8,14,20 * * *",
+      "35 2,6,8,14,20 * * *",
       () => {
         console.log("cron started");
         pushToDB();
@@ -97,25 +106,13 @@ AppDataSource.initialize()
             const html = response.data;
             const $ = cheerio.load(html);
 
-            $(".info").map(async (_, product) => {
+            $(".info").map((_, product) => {
               const $product = $(product);
               const title: string = $product.find(".name").text();
               const titleArray = title.split(" -");
               const name = titleArray[0];
-              let size = "";
-              if (title.toLowerCase().includes("1kg")) {
-                size = "1kg";
-              } else if (title.toLowerCase().includes("2kg")) {
-                size = "2kg";
-              } else if (title.toLowerCase().includes("5kg")) {
-                size = "5kg";
-              } else if (title.toLowerCase().includes("10kg")) {
-                size = "10kg";
-              } else if (title.toLowerCase().includes("25kg")) {
-                size = "25kg";
-              } else if (title.toLowerCase().includes("50kg")) {
-                size = "50kg";
-              }
+              let size = sizing(title);
+
               const price: string = $product.find(".prc").text();
 
               const date: string = Date();
@@ -130,17 +127,15 @@ AppDataSource.initialize()
               );
             });
 
-            filteredList.map(async (obj) => {
-              const { name, size, price, country, date } = obj;
-
+            filteredList.map(async ({ name, size, price, country, date }) => {
               await AppDataSource.manager
                 .save(
                   AppDataSource.manager.create(Sugar, {
-                    name: name,
-                    size: size,
-                    price: price,
-                    country: country,
-                    date: date,
+                    name,
+                    size,
+                    price,
+                    country,
+                    date,
                   })
                 )
                 .catch((err) => {
@@ -148,7 +143,8 @@ AppDataSource.initialize()
                 });
               console.log("saved at: " + date);
             });
-          }).then()
+          })
+          .then()
           .catch(console.error);
       });
     }
